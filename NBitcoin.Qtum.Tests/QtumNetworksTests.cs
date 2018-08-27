@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace NBitcoin.Dash.Tests
+namespace NBitcoin.Qtum.Tests
 {
     public class QtumNetworksTests
     {

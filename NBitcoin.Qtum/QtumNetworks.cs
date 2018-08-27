@@ -5,7 +5,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 
-namespace NBitcoin.Dash
+namespace NBitcoin.Qtum
 {
     public class QtumNetworks
     {
