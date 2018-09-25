@@ -8,22 +8,48 @@ namespace NBitcoin.Qtum.Tests
         public void ShouldGenerateAndParsePrivateKeyTest()
         {
             var key = new Key();
-            var privateKey = key.GetWif(QtumNetworks.Testnet).ToString();
-            var address = key.PubKey.GetAddress(QtumNetworks.Testnet).ToString();
-
-            Assert.Equal(QtumNetworks.Testnet, BitcoinAddress.Create(address).Network);
-            Assert.Equal(address, new BitcoinSecret(privateKey, QtumNetworks.Testnet).GetAddress().ToString());
+            var net = QtumNetworks.Instance.Testnet;
+            var privateKey = key.GetWif(net).ToString();
+            var address = key.PubKey.GetAddress(net).ToString();
+            Assert.Equal(net, BitcoinAddress.Create(address, net).Network);
+            Assert.Equal(address, new BitcoinSecret(privateKey, net).GetAddress().ToString());
         }
 
         [Fact]
         public void ShouldGenerateAndParsePrivateKeyMain()
         {
             var key = new Key();
-            var privateKey = key.GetWif(QtumNetworks.Mainnet).ToString();
-            var address = key.PubKey.GetAddress(QtumNetworks.Mainnet).ToString();
-
-            Assert.Equal(QtumNetworks.Mainnet, BitcoinAddress.Create(address).Network);
-            Assert.Equal(address, new BitcoinSecret(privateKey, QtumNetworks.Mainnet).GetAddress().ToString());
+            var net = QtumNetworks.Instance.Mainnet;
+            var privateKey = key.GetWif(net).ToString();
+            var address = key.PubKey.GetAddress(net).ToString();
+            Assert.Equal(net, BitcoinAddress.Create(address, net).Network);
+            Assert.Equal(address, new BitcoinSecret(privateKey, net).GetAddress().ToString());
         }
+
+        [Fact]
+        public void ShouldGetNetByName()
+        {
+            QtumNetworks.Instance.EnsureRegistered();
+
+            var net = Network.GetNetwork("qtum-testnet");
+            Assert.NotNull(net);
+            Assert.Equal(QtumNetworks.Instance.Testnet, net);
+
+            net = Network.GetNetwork("qtum-test");
+            Assert.NotNull(net);
+            Assert.Equal(QtumNetworks.Instance.Testnet, net);
+
+
+            net = Network.GetNetwork("qtum-main");
+            Assert.NotNull(net);
+            Assert.Equal(QtumNetworks.Instance.Mainnet, net);
+
+            net = Network.GetNetwork("qtum-mainnet");
+            Assert.NotNull(net);
+            Assert.Equal(QtumNetworks.Instance.Mainnet, net);
+
+        }
+
+        
     }
 }

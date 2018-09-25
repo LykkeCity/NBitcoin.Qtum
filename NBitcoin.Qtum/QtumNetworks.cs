@@ -1,17 +1,17 @@
 ﻿using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using System.Linq;
 using System;
-using System.Net;
-using System.Collections.Generic;
 
 namespace NBitcoin.Qtum
 {
-    public class QtumNetworks
+    public class QtumNetworks : NetworkSetBase
     {
-        private static Network _mainnet;
-        private static Network _testnet;
-        private static object _lock = new object();
+        private QtumNetworks()
+        {
+
+        }
+        public static QtumNetworks Instance { get; } = new QtumNetworks();
+
+        public override string CryptoCode => "QTUM";
 
         static Tuple<byte[], int>[] pnSeed6_main = {
             Tuple.Create(new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0x23,0xc2,0xad,0x65}, 3888),
@@ -310,97 +310,53 @@ namespace NBitcoin.Qtum
             Tuple.Create(new byte[]{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0x23,0xc2,0x48,0x5f}, 13888)
         };
 
-        public static void Register()
+        protected override NetworkBuilder CreateMainnet()
         {
-            if (_mainnet == null)
+            NetworkBuilder builder = new NetworkBuilder();
+            builder.SetConsensus(new Consensus()
             {
-                _mainnet = RegisterMainnet();
-            }
-
-            if (_testnet == null)
+                SubsidyHalvingInterval = 985500,
+                MajorityEnforceBlockUpgrade = 750, //?
+                MajorityRejectBlockOutdated = 950, //?
+                MajorityWindow = 1000, //?
+                BIP34Hash = new uint256("0x000075aef83cf2853580f8ae8ce6f8c3096cfa21d98334d6e3f95e5582ed986c"),
+                PowLimit = new Target(new uint256("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
+                PowTargetTimespan = TimeSpan.FromSeconds(16 * 60),
+                PowTargetSpacing = TimeSpan.FromSeconds(2 * 64),
+                PowAllowMinDifficultyBlocks = false,
+                PowNoRetargeting = true,
+                RuleChangeActivationThreshold = 1916,
+                MinerConfirmationWindow = 2016,
+                CoinbaseMaturity = 500
+            })
+            .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { 58 })
+            .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { 50 })
+            .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { 128 })
+            .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { 0x04, 0x88, 0xB2, 0x1E })
+            .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { 0x04, 0x88, 0xAD, 0xE4 })
+            .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("qtum")) //?
+            .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("qtum")) //?
+            .SetMagic(0x9d4beb9f) //?
+            .SetPort(8333)
+            .SetRPCPort(8332)
+            .SetName("qtum-main")
+            .AddAlias("qtum-mainnet")
+            .AddDNSSeeds(new[]
             {
-                _testnet = RegisterTestnet();
-            }
+                new DNSSeedData("qtum3", "qtum3.dynu.net"),
+                new DNSSeedData("qtum5", "qtum5.dynu.net"),
+                new DNSSeedData("qtum6", "qtum6.dynu.net"),
+                new DNSSeedData("qtum7", "qtum7.dynu.net")
+            })
+             .AddSeeds(ToSeed(pnSeed6_main))
+             .SetGenesis("0100000000000000000000000000000000000000000000000000000000000000000000006db905142382324db417761891f2d2f355ea92f27ab0fc35e59e90b50e0534edf5d2af59ffff001ff9787a00e965ffd002cd6ad0e2dc402b8044de833e06b23127ea8c3d80aec9141077149556e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4210000000000000000000000000000000000000000000000000000000000000000ffffffff000101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff420004bf91221d0104395365702030322c203230313720426974636f696e20627265616b732024352c30303020696e206c6174657374207072696365206672656e7a79ffffffff0100f2052a010000004341040d61d8653448c98731ee5fffd303c15e71ec2057b77f11ab3601979728cdaff2d68afbba14e4fa0bc44f2072b0b23ef63717f8cdfbe58dcd33f32b6afe98741aac00000000");
+            return builder;
         }
 
-        public static Network Mainnet
+        protected override NetworkBuilder CreateTestnet()
         {
-            get
-            {
-                return _mainnet ?? RegisterMainnet();
-            }
-        }
-
-        public static Network Testnet
-        {
-            get
-            {
-                return _testnet ?? RegisterTestnet();
-            }
-        }
-
-        private static Network RegisterMainnet()
-        {
-            lock (_lock)
-            {
-                var builder = new NetworkBuilder();
-
-                _mainnet =  builder.SetConsensus(new Consensus()
-                {
-                    SubsidyHalvingInterval = 985500,
-                    MajorityEnforceBlockUpgrade = 750, //?
-                    MajorityRejectBlockOutdated = 950, //?
-                    MajorityWindow = 1000, //?
-                    BIP34Hash = new uint256("0x000075aef83cf2853580f8ae8ce6f8c3096cfa21d98334d6e3f95e5582ed986c"),
-                    PowLimit = new Target(new uint256("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
-                    PowTargetTimespan = TimeSpan.FromSeconds(16 * 60),
-                    PowTargetSpacing = TimeSpan.FromSeconds(2 * 64),
-                    PowAllowMinDifficultyBlocks = false,
-                    PowNoRetargeting = true,
-                    RuleChangeActivationThreshold = 1916,
-                    MinerConfirmationWindow = 2016,
-                    CoinbaseMaturity = 500,
-                    HashGenesisBlock = new uint256("0x000075aef83cf2853580f8ae8ce6f8c3096cfa21d98334d6e3f95e5582ed986c"),
-                    GetPoWHash = GetPoWHash
-                })
-                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { 58 })
-                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { 50 })
-                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { 128 })
-                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { 0x04, 0x88, 0xB2, 0x1E })
-                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { 0x04, 0x88, 0xAD, 0xE4 })
-                .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("qtum")) //?
-                .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("qtum")) //?
-                .SetMagic(0x9d4beb9f) //?
-                .SetPort(8333)
-                .SetRPCPort(8332)
-                .SetName("qtum-main")
-                .AddAlias("qtum-mainnet")
-                .AddDNSSeeds(new[]
-                {
-                    new DNSSeedData("qtum3", "qtum3.dynu.net"),
-                    new DNSSeedData("qtum5", "qtum5.dynu.net"),
-                    new DNSSeedData("qtum6", "qtum6.dynu.net"),
-                    new DNSSeedData("qtum7", "qtum7.dynu.net")
-                })
-                .AddSeeds(ToSeed(pnSeed6_main))
-                .SetGenesis(new Block(new BlockHeader()
-                {
-                    BlockTime = DateTimeOffset.FromUnixTimeSeconds(1504695029),
-                    Nonce = 8026361, 
-                }))
-                .BuildAndRegister();
-
-                return _mainnet;
-            }
-        }
-
-        private static Network RegisterTestnet()
-        {
-            lock (_lock)
-            {
-                var builder = new NetworkBuilder();
-
-                _testnet = builder.SetConsensus(new Consensus()
+            return new NetworkBuilder()
+                .SetConsensus(new Consensus()
                 {
                     SubsidyHalvingInterval = 985500,
                     MajorityEnforceBlockUpgrade = 51, // ?
@@ -414,16 +370,14 @@ namespace NBitcoin.Qtum
                     RuleChangeActivationThreshold = 1512,
                     MinerConfirmationWindow = 2016,
                     CoinbaseMaturity = 500,
-                    HashGenesisBlock = new uint256("0x0000e803ee215c0684ca0d2f9220594d3f828617972aad66feb2ba51f5e14222"),
-                    GetPoWHash = GetPoWHash
                 })
                 .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { 120 })
                 .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { 110 })
                 .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { 239 })
                 .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { 0x04, 0x35, 0x87, 0xCF })
                 .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { 0x04, 0x35, 0x83, 0x94 })
-                .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("tdash"))
-                .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("tdash"))
+                .SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("tqtum"))
+                .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("tqtum"))
                 .SetMagic(0x9d4beb9f) // ?
                 .SetPort(18333)
                 .SetRPCPort(18332)
@@ -431,18 +385,10 @@ namespace NBitcoin.Qtum
                 .AddAlias("qtum-testnet")
                 .AddDNSSeeds(new[]
                 {
-                new DNSSeedData("qtum4.dynu.net",  "qtum4.dynu.net")
+                    new DNSSeedData("qtum4.dynu.net", "qtum4.dynu.net")
                 })
                 .AddSeeds(ToSeed(pnSeed6_test))
-                .SetGenesis(new Block(new BlockHeader()
-                {
-                    BlockTime = DateTimeOffset.FromUnixTimeSeconds(1504695029),
-                    Nonce = 7349697,
-                }))
-                .BuildAndRegister();
-
-                return _testnet;
-            }
+                .SetGenesis("0100000000000000000000000000000000000000000000000000000000000000000000006db905142382324db417761891f2d2f355ea92f27ab0fc35e59e90b50e0534edf5d2af59ffff001fc1257000e965ffd002cd6ad0e2dc402b8044de833e06b23127ea8c3d80aec9141077149556e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4210000000000000000000000000000000000000000000000000000000000000000ffffffff000101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff420004bf91221d0104395365702030322c203230313720426974636f696e20627265616b732024352c30303020696e206c6174657374207072696365206672656e7a79ffffffff0100f2052a010000004341040d61d8653448c98731ee5fffd303c15e71ec2057b77f11ab3601979728cdaff2d68afbba14e4fa0bc44f2072b0b23ef63717f8cdfbe58dcd33f32b6afe98741aac00000000");
         }
 
         private static uint256 GetPoWHash(BlockHeader header)
@@ -452,11 +398,9 @@ namespace NBitcoin.Qtum
             return new uint256(h);
         }
 
-        private static IEnumerable<NetworkAddress> ToSeed(Tuple<byte[], int>[] tuples)
+        protected override NetworkBuilder CreateRegtest()
         {
-            return tuples
-                .Select(t => new NetworkAddress(new IPAddress(t.Item1), t.Item2))
-                .ToArray();
+            return new NetworkBuilder().SetConsensus(new Consensus()).SetName("qtum-rgtest-not-implemented");
         }
     }
 }
